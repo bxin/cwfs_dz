@@ -80,8 +80,8 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     intrinsic35 = intrinsic35 * wavelength
     intrinsic = intrinsic35[0, 3:znmax]
 
-    ax = plt.subplot(2, 1, 1)
-    plt.plot(x, intrinsic, label = 'Truth',
+    plt.subplot(2, 1, 1)
+    plt.plot(x, intrinsic, label = 'Truth (Optics only)',
              marker='o', color='b', markersize=5)
     for isnap in range(nsnap):
         zFile = 'output/wfs_%s_%03d.txt' % (obsID, isnap)
@@ -104,8 +104,8 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     plt.title('%3.1fmm, %4.2f arcsec, %s, field: %s, %d snaps'%(
         dz, vKseeing, teleState, field, nsnap))
 
-    ax = plt.subplot(2, 1, 2)
-    plt.plot(x, intrinsic, label='Truth',
+    plt.subplot(2, 1, 2)
+    plt.plot(x, intrinsic, label='Truth (Optics only)',
              marker='o', color='b', markersize=5)
     plt.errorbar(x, np.mean(zer, axis=1), yerr=np.std(zer, axis=1), 
                  linestyle = '--', marker='.', color='r', markersize=10,
@@ -145,7 +145,7 @@ def parallelCwfs(obsID, eimage, instruFile, algoFile, stampSize, nsnap,
         jobs.append(p)
         p.start()
         counter += 1
-        if counter == numproc:
+        if (counter == numproc) or (isnap == nsnap-1):
             for p in jobs:
                 p.join()
             counter = 0
