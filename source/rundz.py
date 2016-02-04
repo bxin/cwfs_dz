@@ -29,7 +29,7 @@ def main():
                         help='Number of Image pairs (snaps)')
     parser.add_argument('-mag', dest='mag', default=17, type=int,
                         help='Star magnitude')
-    parser.add_argument('-stampSize', dest='stampSize', default=256, type=int,
+    parser.add_argument('-stampSize', dest='stampSize', default=-1, type=int,
                         help='Size of Image Stamp')
     parser.add_argument('-phosimoff', help='w/o running Phosim',
                         action='store_true')
@@ -51,15 +51,20 @@ def main():
     dz, instFile, cmdFile, filter, field = createPertFiles(
         args.obsID, args.nsnap, args.mag, args.debugLevel)
 
+    if args.stampSize == -1:
+        stampSize = 2**np.ceil(np.log(0.5/1.2335/10e-3+50)/np.log(2))
+    else:
+        stampSize = args.stampSize
+        
     if not args.phosimoff:
         runPhosim(args.obsID, dz, instFile, cmdFile, args.nsnap, filter, field,
-                  args.eimage, args.stampSize, args.numproc, args.debugLevel)
+                  args.eimage, stampSize, args.numproc, args.debugLevel)
 
-    instruFile = 'lsst%2d' % (dz * 10)
+    instruFile = 'lsst%02d' % (dz * 10)
     algoFile = 'exp'
     if not args.cwfsoff:
         parallelCwfs(args.obsID, args.eimage, instruFile, algoFile,
-                     args.stampSize, args.nsnap, field, args.numproc,
+                     stampSize, args.nsnap, field, args.numproc,
                      args.debugLevel)
 
     plotMeanSTD(args.obsID, args.nsnap, args.debugLevel)
@@ -180,10 +185,15 @@ def runcwfs(obsID, eimage, isnap, I1Field, I2Field, inst, algo, model):
 def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
               stampSize, numproc, debugLevel):
 
+    if obsID[0] == '0':  #Phosim ignores the leading '0'
+        obsIDPhosim = '9'+obsID[1:]
+    else:
+        obsIDPhosim = obsID
+       
     phosimDir = '../../simulation/phosimSE/'
     phosimLog = 'image/log/wfs_%s.log' % (obsID)
 
-    isc = 'lsst%2d' % (dz * 10)
+    isc = 'lsst%02d' % (dz * 10)
     iscDir = '%s/data/%s/' % (phosimDir, isc)
     try:
         os.stat(iscDir)
@@ -192,7 +202,7 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
         runProgram('ln %s/data/lsst/* %s/' % (phosimDir, iscDir))
         runProgram('rm %s/focalplanelayout.txt' % (iscDir))
         runProgram('rm %s/segmentation.txt' % (iscDir))
-        runProgram('cp data/focalplanelayout_%2d.txt \
+        runProgram('cp data/focalplanelayout_%02d.txt \
         %s/focalplanelayout.txt' % (
             dz * 10, iscDir))
         runProgram('cp data/segmentation_splitR22_S11.txt \
@@ -228,7 +238,7 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
             # get stamp from amplifer image
             if eimage == 1:
                 src = '%s/output/%s_a_%s_f%s_%s_E%03d.fits.gz' % (
-                    phosimDir, isc, obsID, filterStr, ampStr, isnap)
+                    phosimDir, isc, obsIDPhosim, filterStr, ampStr, isnap)
                 runProgram('gunzip -f %s' % src)
                 src = src.replace('.gz', '')
                 IHDU = fits.open(src)
@@ -245,7 +255,7 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
 
             # get stamp from e-image
             src = '%s/output/%s_e_%s_f%s_%s_E%03d.fits.gz' % (
-                phosimDir, isc, obsID, filterStr, chipStr, isnap)
+                phosimDir, isc, obsIDPhosim, filterStr, chipStr, isnap)
             runProgram('gunzip -f %s' % src)
             src = src.replace('.gz', '')
             IHDU = fits.open(src)
@@ -269,6 +279,11 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     dz, r0seeing, vKseeing, seed, teleState, filter, field, exptime = \
         parseObsID(obsID, debugLevel)
 
+    if obsID[0] == '0':  #Phosim ignores the leading '0'
+        obsIDPhosim = '9'+obsID[1:]
+    else:
+        obsIDPhosim = obsID
+                
     # create inst file
     if obsID[7] == '0':
         source = 'data/fieldCenter.inst'
@@ -277,7 +292,7 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     fidw = open(instFile, 'w')
     for line in fidr:
         if line.startswith('Opsim_obshistid'):
-            line = 'Opsim_obshistid %s\n' % obsID
+            line = 'Opsim_obshistid %s\n' % obsIDPhosim
         elif line.startswith('Opsim_filter'):
             if (filter >= 6):
                 line = 'Opsim_filter %d\n' % 1
