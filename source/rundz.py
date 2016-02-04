@@ -52,7 +52,7 @@ def main():
         args.obsID, args.nsnap, args.mag, args.debugLevel)
 
     if args.stampSize == -1:
-        stampSize = 2**np.ceil(np.log(0.5/1.2335/10e-3+50)/np.log(2))
+        stampSize = 2**np.ceil(np.log(dz/1.2335/10e-3+50)/np.log(2))
     else:
         stampSize = args.stampSize
         
