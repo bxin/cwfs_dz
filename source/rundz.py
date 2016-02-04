@@ -106,8 +106,10 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     ax.set_xlim(3.5, znmax + 0.5)
     # plt.xlabel('Zernike index')
     plt.ylabel('Coefficients (nm)')
-    plt.legend(loc="upper right",
-               shadow=True, fancybox=True)
+    if field == 'center':
+        plt.legend(loc="upper right", shadow=True, fancybox=True)
+    else:
+        plt.legend(loc="lower right", shadow=True, fancybox=True)
     plt.grid()
 
     plt.title('%3.1fmm, %4.2f arcsec, %s, field: %s, %6.1f s' % (
