@@ -75,7 +75,7 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     zer = np.zeros((znmax - 3, nsnap))
 
     x = range(4, znmax + 1)
-    dz, r0seeing, vKseeing, seed, teleState, filter, field, exptime = \
+    dz, r0seeing500, vKseeing500, seed, teleState, filter, field, exptime = \
         parseObsID(obsID, debugLevel)
 
     # get the truth
@@ -111,7 +111,7 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     plt.grid()
 
     plt.title('%3.1fmm, %4.2f arcsec, %s, field: %s, %6.1f s' % (
-        dz, vKseeing, teleState, field, exptime))
+        dz, vKseeing500, teleState, field, exptime))
 
     ax = plt.subplot(2, 1, 2)
     plt.plot(x, ztrue, label='Truth (Optics only)',
@@ -147,8 +147,8 @@ def parallelCwfs(obsID, eimage, instruFile, algoFile, stampSize, nsnap,
         I2Field = [0, 0]
         model = 'onAxis'
     elif field == 'corner':
-        I1Field = [-1.176, -1.176]
-        I2Field = [-1.176, -1.176]
+        I1Field = [-1.168, -1.168]
+        I2Field = [-1.184, -1.168]
         model = 'offAxis'
 
     jobs = []
@@ -288,7 +288,7 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
 
 def createPertFiles(obsID, nsnap, mag, debugLevel):
 
-    dz, r0seeing, vKseeing, seed, teleState, filter, field, exptime = \
+    dz, r0seeing500, vKseeing500, seed, teleState, filter, field, exptime = \
         parseObsID(obsID, debugLevel)
     if mag == -1: #5mag = 100x; we use 17 mag for dz=1.0mm
         mag = 17 - np.log((dz/1.0)**2)/np.log(100**0.2)
@@ -315,7 +315,7 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
             else:
                 line = 'Opsim_filter %d\n' % filter
         elif line.startswith('Opsim_rawseeing'):
-            line = 'Opsim_rawseeing %6.4f\n' % r0seeing
+            line = 'Opsim_rawseeing %6.4f\n' % r0seeing500
         elif line.startswith('SIM_SEED'):
             line = 'SIM_SEED %d\n' % seed
         elif line.startswith('SIM_VISTIME'):
@@ -345,18 +345,18 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
 
 def parseObsID(obsID, debugLevel):
     dz = int(obsID[0:2]) / 10
-    r0seeing = obsID[2:4]
-    if r0seeing == '04':
+    r0seeing500 = obsID[2:4]
+    if r0seeing500 == '04':
         r0 = 0.2002
-    elif r0seeing == '06':
+    elif r0seeing500 == '06':
         r0 = 0.1382
-    elif r0seeing == '08':
+    elif r0seeing500 == '08':
         r0 = 0.1058
-    elif r0seeing == '10':
+    elif r0seeing500 == '10':
         r0 = 0.0859
-    elif r0seeing == '12':
+    elif r0seeing500 == '12':
         r0 = 0.0724
-    elif r0seeing == '14':
+    elif r0seeing500 == '14':
         r0 = 0.0626
 
     seed = int(obsID[4]) * 1000 + 7 + sum(int(i) for i in obsID)
@@ -376,16 +376,15 @@ def parseObsID(obsID, debugLevel):
     exptime = exptimeList[int(obsID[8])]
 
     L0 = 30
-    Leff = [365.0, 480.0, 622.0, 754.0, 868.0, 973.0, 500]
-    vKseeing = 0.976 * Leff[filter] * 1e-9 / (r0 / 3600 / 180 * np.pi) * \
+    vKseeing500 = 0.976 * 500e-9 / (r0 / 3600 / 180 * np.pi) * \
         np.sqrt(1 - 2.183 * (r0 / L0)**0.356)
-    r0seeing = 0.976 * Leff[filter] * 1e-9 / (r0 / 3600 / 180 * np.pi)
+    r0seeing500 = 0.976 * 500e-9 / (r0 / 3600 / 180 * np.pi)
 
     if debugLevel >= 0:
         print('--------------------------')
         print('dz=%3.1fmm' % dz)
-        print('vKseeing=%4.2f arcsec; r0seeing=%6.4f arcsec' % (
-            vKseeing, r0seeing))
+        print('vKseeing500=%4.2f arcsec; r0seeing500=%6.4f arcsec' % (
+            vKseeing500, r0seeing500))
         print('seed=%d' % seed)
         print('teleState = %s' % teleState)
         if (filter >= 6):
@@ -395,7 +394,7 @@ def parseObsID(obsID, debugLevel):
         print('field = %s' % field)
         print('--------------------------')
 
-    return dz, r0seeing, vKseeing, seed, teleState, filter, field, exptime
+    return dz, r0seeing500, vKseeing500, seed, teleState, filter, field, exptime
 
 
 def runProgram(command, binDir=None, argstring=None):
