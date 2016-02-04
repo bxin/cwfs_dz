@@ -70,56 +70,62 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     zer = np.zeros((znmax - 3, nsnap))
 
     x = range(4, znmax + 1)
-    dz, r0seeing, vKseeing, seed, teleState, filter, field = \
+    dz, r0seeing, vKseeing, seed, teleState, filter, field, exptime = \
         parseObsID(obsID, debugLevel)
-        
+
     # get the truth
     wavelength = 500  # in nm
     intrinsic35 = np.loadtxt(
         '../../simulation/activeoptics/data/intrinsic_zn.txt')
     intrinsic35 = intrinsic35 * wavelength
-    intrinsic = intrinsic35[0, 3:znmax]
+    ztrue = intrinsic35[0, 3:znmax]
 
-    plt.subplot(2, 1, 1)
-    plt.plot(x, intrinsic, label = 'Truth (Optics only)',
+    ax = plt.subplot(2, 1, 1)
+    plt.plot(x, ztrue, label='Truth (Optics only)',
              marker='o', color='b', markersize=5)
     for isnap in range(nsnap):
         zFile = 'output/wfs_%s_%03d.txt' % (obsID, isnap)
         zer[:, isnap] = np.loadtxt(zFile)
 
         if isnap == 0:
-            plt.plot(x, zer[:, isnap], label = 'CWFS results',
-                    marker='.', color='r', markersize=10, linestyle='--')
+            plt.plot(x, zer[:, isnap], label='CWFS results (%d pairs)' % nsnap,
+                     marker='.', color='r', markersize=10, linestyle='--')
         else:
             plt.plot(x, zer[:, isnap],  # label = '',
-                    marker='.', color='r', markersize=10, linestyle='--')
+                     marker='.', color='r', markersize=10, linestyle='--')
 
-    plt.plot(x, intrinsic, marker='o', color='b', markersize=5)
+    plt.plot(x, ztrue, marker='o', color='b', markersize=5)
+    ax.set_xlim(3.5, znmax + 0.5)
     # plt.xlabel('Zernike index')
     plt.ylabel('Coefficients (nm)')
     plt.legend(loc="upper right",
                shadow=True, fancybox=True)
     plt.grid()
 
-    plt.title('%3.1fmm, %4.2f arcsec, %s, field: %s, %d snaps'%(
-        dz, vKseeing, teleState, field, nsnap))
+    plt.title('%3.1fmm, %4.2f arcsec, %s, field: %s, %6.1f s' % (
+        dz, vKseeing, teleState, field, exptime))
 
-    plt.subplot(2, 1, 2)
-    plt.plot(x, intrinsic, label='Truth (Optics only)',
+    ax = plt.subplot(2, 1, 2)
+    plt.plot(x, ztrue, label='Truth (Optics only)',
              marker='o', color='b', markersize=5)
-    plt.errorbar(x, np.mean(zer, axis=1), yerr=np.std(zer, axis=1), 
-                 linestyle = '--', marker='.', color='r', markersize=10,
+    plt.errorbar(x, np.mean(zer, axis=1), yerr=np.std(zer, axis=1),
+                 linestyle='--', marker='.', color='r', markersize=10,
                  linewidth=2, label='CWFS Mean and STD')
-    plt.plot(x, intrinsic, marker='o', color='b', markersize=5)
+    plt.plot(x, ztrue, marker='o', color='b', markersize=5)
+    ax.set_xlim(3.5, znmax + 0.5)
     plt.legend(loc="upper right",
                shadow=True, fancybox=True)
     plt.xlabel('Zernike index')
     plt.ylabel('Mean and STD (nm)')
     plt.grid()
 
-    plt.savefig('output/wfs_%s_%d.png'%(obsID, nsnap))
+    plt.savefig('output/wfs_%s_%d.png' % (obsID, nsnap))
     # plt.show()
-    
+
+    outFile = 'output/wfs_%s_%d_sum.txt' % (obsID, nsnap)
+    np.savetxt(outFile, np.vstack((
+        ztrue, np.mean(zer, axis=1), np.std(zer, axis=1))))
+
 # def preproc():
 
 
@@ -140,12 +146,13 @@ def parallelCwfs(obsID, eimage, instruFile, algoFile, stampSize, nsnap,
     jobs = []
     counter = 0
     for isnap in range(nsnap):
-        p = multiprocessing.Process(target=runcwfs, args=(
-            obsID, eimage, isnap, I1Field, I2Field, inst, algo, model))
+        p = multiprocessing.Process(
+            target=runcwfs, name='cwfs%d' % isnap, args=(
+                obsID, eimage, isnap, I1Field, I2Field, inst, algo, model))
         jobs.append(p)
         p.start()
         counter += 1
-        if (counter == numproc) or (isnap == nsnap-1):
+        if (counter == numproc) or (isnap == nsnap - 1):
             for p in jobs:
                 p.join()
             counter = 0
@@ -207,7 +214,7 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
 
     for itra in range(2):
         if field == 'center':
-            chipStr = 'R22_S11_C%d' % itra #0 is extra, 1 is intra
+            chipStr = 'R22_S11_C%d' % itra  # 0 is extra, 1 is intra
             ampStr = 'R22_S11_C%d4' % itra
             if itra == 0:
                 ampCenter = [366, 1862]
@@ -259,7 +266,7 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
 
 def createPertFiles(obsID, nsnap, mag, debugLevel):
 
-    dz, r0seeing, vKseeing, seed, teleState, filter, field = \
+    dz, r0seeing, vKseeing, seed, teleState, filter, field, exptime = \
         parseObsID(obsID, debugLevel)
 
     # create inst file
@@ -281,7 +288,7 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
         elif line.startswith('SIM_SEED'):
             line = 'SIM_SEED %d\n' % seed
         elif line.startswith('SIM_VISTIME'):
-            line = 'SIM_VISTIME %d\n' % (nsnap*15+(nsnap-1)*3)
+            line = 'SIM_VISTIME %d\n' % (nsnap * exptime + (nsnap - 1) * 3)
         elif line.startswith('SIM_NSNAP'):
             line = 'SIM_NSNAP %d\n' % nsnap
         elif line.startswith('object'):
@@ -333,6 +340,10 @@ def parseObsID(obsID, debugLevel):
         field = 'center'
     else:
         field = 'corner'
+
+    exptimeList = [0.1, 1, 10, 15, 150, 1500]
+    exptime = exptimeList[int(obsID[8])]
+
     L0 = 30
     Leff = [365.0, 480.0, 622.0, 754.0, 868.0, 973.0, 500]
     vKseeing = 0.976 * Leff[filter] * 1e-9 / (r0 / 3600 / 180 * np.pi) * \
@@ -353,7 +364,7 @@ def parseObsID(obsID, debugLevel):
         print('field = %s' % field)
         print('--------------------------')
 
-    return dz, r0seeing, vKseeing, seed, teleState, filter, field
+    return dz, r0seeing, vKseeing, seed, teleState, filter, field, exptime
 
 
 def runProgram(command, binDir=None, argstring=None):
