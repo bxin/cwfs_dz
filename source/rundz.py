@@ -83,7 +83,10 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     intrinsic35 = np.loadtxt(
         '../../simulation/activeoptics/data/intrinsic_zn.txt')
     intrinsic35 = intrinsic35 * wavelength
-    ztrue = intrinsic35[0, 3:znmax]
+    if field == 'center':
+        ztrue = intrinsic35[0, 3:znmax]
+    else:
+        ztrue = intrinsic35[33, 3:znmax] #Lower left corner
 
     ax = plt.subplot(2, 1, 1)
     plt.plot(x, ztrue, label='Truth (Optics only)',
@@ -144,8 +147,8 @@ def parallelCwfs(obsID, eimage, instruFile, algoFile, stampSize, nsnap,
         I2Field = [0, 0]
         model = 'onAxis'
     elif field == 'corner':
-        I1Field = [1.176, 1.176]
-        I2Field = [1.176, 1.176]
+        I1Field = [-1.176, -1.176]
+        I2Field = [-1.176, -1.176]
         model = 'offAxis'
 
     jobs = []
@@ -232,7 +235,16 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
             else:
                 ampCenter = [366, 1862]
                 eCenter = [147, 2180]
-
+        else:
+            chipStr = 'R00_S22_C%d' % itra  # 0 is extra, 1 is intra
+            ampStr = 'R00_S22_C%d4' % itra
+            if itra == 0:
+                ampCenter = [366, 1862]
+                eCenter = [865, 2180]
+            else:
+                ampCenter = [366, 1862]
+                eCenter = [1147, 2177]
+            
         for isnap in range(nsnap):
 
             # get stamp from amplifer image
@@ -289,6 +301,8 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     # create inst file
     if obsID[7] == '0':
         source = 'data/fieldCenter.inst'
+    else:
+        source = 'data/fieldLL.inst'
     instFile = 'pert/wfs_%s.inst' % obsID
     fidr = open(source, 'r')
     fidw = open(instFile, 'w')
