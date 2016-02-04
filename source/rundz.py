@@ -27,7 +27,7 @@ def main():
     parser.add_argument('obsID', help='observation ID number')
     parser.add_argument('-nsnap', dest='nsnap', default=100, type=int,
                         help='Number of Image pairs (snaps)')
-    parser.add_argument('-mag', dest='mag', default=17, type=int,
+    parser.add_argument('-mag', dest='mag', default=-1, type=int,
                         help='Star magnitude')
     parser.add_argument('-stampSize', dest='stampSize', default=-1, type=int,
                         help='Size of Image Stamp')
@@ -278,6 +278,8 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
 
     dz, r0seeing, vKseeing, seed, teleState, filter, field, exptime = \
         parseObsID(obsID, debugLevel)
+    if mag == -1: #5mag = 100x; we use 17 mag for dz=1.0mm
+        mag = 17 - np.log((dz/1.0)**2)/np.log(100**0.2)
 
     if obsID[0] == '0':  #Phosim ignores the leading '0'
         obsIDPhosim = '9'+obsID[1:]
