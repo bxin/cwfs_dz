@@ -79,14 +79,26 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
         parseObsID(obsID, debugLevel)
 
     # get the truth
-    wavelength = 500  # in nm
-    intrinsic35 = np.loadtxt(
-        '../../simulation/activeoptics/data/intrinsic_zn.txt')
+    if filter == 6:
+        wavelength = 500  # in nm
+        intrinsic35 = np.loadtxt(
+            '../../simulation/activeoptics/data/intrinsic_zn.txt')
+    elif filter == 7:
+        wavelength = 770  # in nm
+        intrinsic35 = np.loadtxt(
+            '../../simulation/activeoptics/data/intrinsic_zn_770nm.txt')
+    else:
+        wavelength = 500  # in nm
+        intrinsic35 = np.loadtxt(
+            '../../simulation/activeoptics/data/intrinsic_zn.txt')
+        
     intrinsic35 = intrinsic35 * wavelength
     if field == 'center':
         ztrue = intrinsic35[0, 3:znmax]
-    else:
-        ztrue = intrinsic35[33, 3:znmax] #Lower left corner
+    elif field == 'UR':
+        ztrue = intrinsic35[31, 3:znmax] 
+    elif field == 'LL':
+        ztrue = intrinsic35[33, 3:znmax] 
 
     ax = plt.subplot(2, 1, 1)
     plt.plot(x, ztrue, label='Truth (Optics only)',
@@ -106,10 +118,7 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     ax.set_xlim(3.5, znmax + 0.5)
     # plt.xlabel('Zernike index')
     plt.ylabel('Coefficients (nm)')
-    if field == 'center':
-        plt.legend(loc="upper right", shadow=True, fancybox=True)
-    else:
-        plt.legend(loc="lower right", shadow=True, fancybox=True)
+    plt.legend(loc="best", shadow=True, fancybox=True)
     plt.grid()
 
     plt.title('%3.1fmm, %4.2f arcsec, %s, field: %s, %6.1f s' % (
@@ -123,7 +132,7 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
                  linewidth=2, label='CWFS Mean and STD')
     plt.plot(x, ztrue, marker='o', color='b', markersize=5)
     ax.set_xlim(3.5, znmax + 0.5)
-    plt.legend(loc="upper right",
+    plt.legend(loc="best",
                shadow=True, fancybox=True)
     plt.xlabel('Zernike index')
     plt.ylabel('Mean and STD (nm)')
@@ -148,7 +157,11 @@ def parallelCwfs(obsID, eimage, instruFile, algoFile, stampSize, nsnap,
         I1Field = [0, 0]
         I2Field = [0, 0]
         model = 'onAxis'
-    elif field == 'corner':
+    elif field == 'UR':
+        I1Field = [1.168, 1.168]
+        I2Field = [1.184, 1.168]
+        model = 'offAxis'
+    elif field == 'LL':
         I1Field = [-1.168, -1.168]
         I2Field = [-1.184, -1.168]
         model = 'offAxis'
@@ -222,8 +235,10 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
 
     runProgram('python %s/phosim.py' % phosimDir, argstring=myargs)
 
-    if filter >= 6:
-        filterStr = '1'
+    if filter == 6:
+        filterStr = '1' #500, g-band
+    elif filter == 7:
+        filterStr = '3' #770, i-band
     else:
         filterStr = '%d' % filter
 
@@ -237,7 +252,16 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
             else:
                 ampCenter = [366, 1862]
                 eCenter = [147, 2180]
-        else:
+        elif field == 'UR':
+            chipStr = 'R44_S00_C%d' % itra  # 0 is extra, 1 is intra
+            ampStr = 'R44_S00_C%d4' % itra
+            if itra == 0:
+                ampCenter = [366, 1862]
+                eCenter = [1133, 1880]
+            else:
+                ampCenter = [366, 1862]
+                eCenter = [863, 1897]
+        elif field == 'LL':
             chipStr = 'R00_S22_C%d' % itra  # 0 is extra, 1 is intra
             ampStr = 'R00_S22_C%d4' % itra
             if itra == 0:
@@ -301,10 +325,13 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
         obsIDPhosim = obsID
                 
     # create inst file
-    if obsID[7] == '0':
+    if int(obsID[7]) == 0:
         source = 'data/fieldCenter.inst'
-    else:
+    elif int(obsID[7]) == 1:
+        source = 'data/fieldUR.inst'
+    elif int(obsID[7]) == 3:
         source = 'data/fieldLL.inst'
+        
     instFile = 'pert/wfs_%s.inst' % obsID
     fidr = open(source, 'r')
     fidw = open(instFile, 'w')
@@ -312,8 +339,10 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
         if line.startswith('Opsim_obshistid'):
             line = 'Opsim_obshistid %s\n' % obsIDPhosim
         elif line.startswith('Opsim_filter'):
-            if (filter >= 6):
-                line = 'Opsim_filter %d\n' % 1
+            if (filter == 6):
+                line = 'Opsim_filter %d\n' % 1 #500, g-band
+            elif (filter == 7):
+                line = 'Opsim_filter %d\n' % 3 #770, i-band
             else:
                 line = 'Opsim_filter %d\n' % filter
         elif line.startswith('Opsim_rawseeing'):
@@ -326,8 +355,11 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
             line = 'SIM_NSNAP %d\n' % nsnap
         elif line.startswith('object'):
             line = line.replace('17.000000', '%9.6f' % mag)
-            if not (filter >= 6):
+            if filter < 6:
                 line = line.replace('sed_500.txt', 'sed_flat.txt')
+            elif filter==7:
+                line = line.replace('sed_500.txt', 'sed_770.txt')
+                
         fidw.write(line)
     fidr.close()
     fidw.close()
@@ -371,8 +403,10 @@ def parseObsID(obsID, debugLevel):
     filter = int(obsID[6])
     if int(obsID[7]) == 0:
         field = 'center'
-    else:
-        field = 'corner'
+    elif int(obsID[7]) == 1:
+        field = 'UR'
+    elif int(obsID[7]) == 3:
+        field = 'LL'
 
     exptimeList = [0.1, 1, 10, 15, 150, 1500]
     exptime = exptimeList[int(obsID[8])]
@@ -389,8 +423,10 @@ def parseObsID(obsID, debugLevel):
             vKseeing500, r0seeing500))
         print('seed=%d' % seed)
         print('teleState = %s' % teleState)
-        if (filter >= 6):
+        if (filter == 6):
             print('wavelength = 500nm\n')
+        if (filter == 7):
+            print('wavelength = 770nm\n')
         else:
             print('filter = %s' % filter)
         print('field = %s' % field)
