@@ -75,7 +75,8 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     zer = np.zeros((znmax - 3, nsnap))
 
     x = range(4, znmax + 1)
-    dz, r0seeing500, vKseeing500, seed, teleState, filter, field, exptime = \
+    dz, r0seeing500, vKseeing500, seed, teleState, filter, field, exptime, \
+      ccdMode = \
         parseObsID(obsID, debugLevel)
 
     # get the truth
@@ -314,7 +315,8 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
 
 def createPertFiles(obsID, nsnap, mag, debugLevel):
 
-    dz, r0seeing500, vKseeing500, seed, teleState, filter, field, exptime = \
+    dz, r0seeing500, vKseeing500, seed, teleState, filter, field, exptime, \
+      ccdMode = \
         parseObsID(obsID, debugLevel)
     if mag == -1: #5mag = 100x; we use 17 mag for dz=1.0mm
         mag = 17 - np.log((dz/1.0)**2)/np.log(100**0.2)
@@ -327,10 +329,8 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     # create inst file
     if int(obsID[7]) == 0:
         source = 'data/fieldCenter.inst'
-    elif int(obsID[7]) == 1:
-        source = 'data/fieldUR.inst'
-    elif int(obsID[7]) == 3:
-        source = 'data/fieldLL.inst'
+    else:
+        source = 'data/field%s.inst' % field
         
     instFile = 'pert/wfs_%s.inst' % obsID
     fidr = open(source, 'r')
@@ -410,7 +410,8 @@ def parseObsID(obsID, debugLevel):
 
     exptimeList = [0.1, 1, 10, 15, 150, 1500]
     exptime = exptimeList[int(obsID[8])]
-
+    ccdMode = int(obsID[9])
+    
     L0 = 30
     vKseeing500 = 0.976 * 500e-9 / (r0 / 3600 / 180 * np.pi) * \
         np.sqrt(1 - 2.183 * (r0 / L0)**0.356)
@@ -432,7 +433,7 @@ def parseObsID(obsID, debugLevel):
         print('field = %s' % field)
         print('--------------------------')
 
-    return dz, r0seeing500, vKseeing500, seed, teleState, filter, field, exptime
+    return dz, r0seeing500, vKseeing500, seed, teleState, filter, field, exptime, ccdMode
 
 
 def runProgram(command, binDir=None, argstring=None):
