@@ -407,6 +407,8 @@ def parseObsID(obsID, debugLevel):
         r0 = 0.0724
     elif r0seeing500 == '14':
         r0 = 0.0626
+    elif r0seeing500 == '00':
+        r0 = 0
 
     seed = int(obsID[4]) * 1000 + 7 + sum(int(i) for i in obsID)
     if obsID[5] == '0':
