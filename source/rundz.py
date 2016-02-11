@@ -371,6 +371,10 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     fidw = open(cmdFile, 'w')
     for line in fidr:
         fidw.write(line)
+    if ccdMode == 0:
+        fidw.write('detectormode 0')
+    elif ccdMode == 1:
+        fidw.write('cleardefects')
     fidr.close()
     fidw.close()
 
