@@ -6,6 +6,7 @@
 # main function
 
 import os
+import sys
 # import glob
 import argparse
 import subprocess
@@ -234,8 +235,12 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
         print('Check the log file below for progress')
         print('%s' % myargs)
 
-    runProgram('python %s/phosim.py' % phosimDir, argstring=myargs)
-
+    try:
+        runProgram('python %s/phosim.py' % phosimDir, argstring=myargs)
+    except RuntimeError:
+        print('Phosim RuntimeError')
+        sys.exit()
+        
     if filter == 6:
         filterStr = '1' #500, g-band
     elif filter == 7:
@@ -372,9 +377,15 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     for line in fidr:
         fidw.write(line)
     if ccdMode == 0:
-        fidw.write('detectormode 0')
+        fidw.write('detectormode 0\n')
     elif ccdMode == 1:
-        fidw.write('cleardefects')
+        fidw.write('cleardefects\n')
+    if r0seeing500 == 0:
+        fidw.write('clearturbulence\n')
+        fidw.write('clearopacity\n')
+        fidw.write('atmosphericdispersion 0\n')
+        if ccdMode == 0:
+            fidw.write('opticsonlymode 1\n')
     fidr.close()
     fidw.close()
 
