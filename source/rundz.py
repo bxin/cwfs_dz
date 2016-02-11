@@ -380,7 +380,7 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
         fidw.write('detectormode 0\n')
     elif ccdMode == 1:
         fidw.write('cleardefects\n')
-    if r0seeing500 == 0:
+    if r0seeing500 < 1e-5:
         fidw.write('clearturbulence\n')
         fidw.write('clearopacity\n')
         fidw.write('atmosphericdispersion 0\n')
