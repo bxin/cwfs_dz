@@ -78,7 +78,7 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     x = range(4, znmax + 1)
     dz, r0seeing500, vKseeing500, seed, teleState, filter, field, exptime, \
       ccdMode = \
-        parseObsID(obsID, debugLevel)
+        parseObsID(obsID, -1)
 
     # get the truth
     if filter == 6:
@@ -105,16 +105,23 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     ax = plt.subplot(2, 1, 1)
     plt.plot(x, ztrue, label='Truth (Optics only)',
              marker='o', color='b', markersize=5)
+    goodIdx = np.ones(nsnap)==1
     for isnap in range(nsnap):
         zFile = 'output/wfs_%s_%03d.txt' % (obsID, isnap)
         zer[:, isnap] = np.loadtxt(zFile)
 
-        if isnap == 0:
-            plt.plot(x, zer[:, isnap], label='CWFS results (%d pairs)' % nsnap,
-                     marker='.', color='r', markersize=10, linestyle='--')
+        if np.std(zer[:,isnap])>1000: #larger than 1um
+            print('cwfs has a problem with snap# %d (idx starts from 0)\n'%(
+                isnap))
+            print(zer[:, isnap])
+            goodIdx[isnap] = False
         else:
-            plt.plot(x, zer[:, isnap],  # label = '',
-                     marker='.', color='r', markersize=10, linestyle='--')
+            if isnap == 0:
+                plt.plot(x, zer[:, isnap], label='CWFS results (%d pairs)' % nsnap,
+                         marker='.', color='r', markersize=10, linestyle='--')
+            else:
+                plt.plot(x, zer[:, isnap],  # label = '',
+                         marker='.', color='r', markersize=10, linestyle='--')
 
     plt.plot(x, ztrue, marker='o', color='b', markersize=5)
     ax.set_xlim(3.5, znmax + 0.5)
@@ -129,7 +136,8 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     ax = plt.subplot(2, 1, 2)
     plt.plot(x, ztrue, label='Truth (Optics only)',
              marker='o', color='b', markersize=5)
-    plt.errorbar(x, np.mean(zer, axis=1), yerr=np.std(zer, axis=1),
+    plt.errorbar(x, np.mean(zer[:, goodIdx], axis=1),
+                 yerr=np.std(zer[:, goodIdx], axis=1),
                  linestyle='--', marker='.', color='r', markersize=10,
                  linewidth=2, label='CWFS Mean and STD')
     plt.plot(x, ztrue, marker='o', color='b', markersize=5)
@@ -228,7 +236,7 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
         runProgram('cp data/segmentation_splitR22_S11.txt \
         %s/segmentation.txt' % iscDir)
 
-    myargs = '%s -c %s -i %s -e %d -p %d > %s' % (
+    myargs = '%s -c %s -i %s -e %d -p %d > %s 2>&1' % (
         instFile, cmdFile, isc, eimage, numproc, phosimLog)
     if debugLevel >= 1:
         print('********Runnnig PHOSIM with following parameters********')
