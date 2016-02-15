@@ -331,8 +331,8 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     dz, r0seeing500, vKseeing500, seed, teleState, filter, field, exptime, \
       ccdMode = \
         parseObsID(obsID, debugLevel)
-    if mag == -1: #5mag = 100x; we use 17 mag for dz=1.0mm
-        mag = 17 - np.log((dz/1.0)**2)/np.log(100**0.2)
+    if mag == -1: #5mag = 100x; we use 14 mag for dz=1.0mm
+        mag = 14 - np.log((dz/1.0)**2)/np.log(100**0.2)
 
     if obsID[0] == '0':  #Phosim ignores the leading '0'
         obsIDPhosim = '9'+obsID[1:]
@@ -418,7 +418,8 @@ def parseObsID(obsID, debugLevel):
     elif r0seeing500 == '00':
         r0 = 1e10
 
-    seed = int(obsID[4]) * 1000 + 7 + sum(int(i) for i in obsID)
+    #below, make seed independent of dz.
+    seed = int(obsID[4]) * 1000 + 7 + sum(int(i) for i in obsID[2:])
     if obsID[5] == '0':
         teleState = 'design'
     elif obsID[5] == '1':
