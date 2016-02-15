@@ -332,7 +332,8 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
       ccdMode = \
         parseObsID(obsID, debugLevel)
     if mag == -1: #5mag = 100x; we use 14 mag for dz=1.0mm
-        mag = 14 - np.log((dz/1.0)**2)/np.log(100**0.2)
+        mag = 14 #it takes too long if we increase intensity for 2.0mm, etc.
+        # mag = 14 - np.log((dz/1.0)**2)/np.log(100**0.2)
 
     if obsID[0] == '0':  #Phosim ignores the leading '0'
         obsIDPhosim = '9'+obsID[1:]
