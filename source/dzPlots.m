@@ -8,7 +8,7 @@ znmax3 = znmax-3;
 zMean = zeros(ndz, znmax3);
 zDev = zeros(ndz, znmax3);
 for idz = 1:ndz
-    sumTXT = sprintf('output/wfs_%02d0410603_100_sum.txt', dz(idz)*10);
+    sumTXT = sprintf('output/wfs_%02d2106032_100_sum.txt', dz(idz)*10);
     txtData = load(sumTXT);
     if idz == 1
         zTrue = txtData(1,:);
