@@ -213,7 +213,7 @@ def runcwfs(obsID, eimage, isnap, I1Field, I2Field, inst, algo, model):
 def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
               stampSize, numproc, debugLevel):
 
-    if obsID[0] == '0':  #Phosim ignores the leading '0'
+    if obsID[0] == '0':  #Phosim (cpp code, not phosim.py) ignores the leading '0'
         obsIDPhosim = '9'+obsID[1:]
     else:
         obsIDPhosim = obsID
@@ -341,7 +341,7 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
         obsIDPhosim = obsID
                 
     # create inst file
-    if int(obsID[7]) == 0:
+    if field == 'center':
         source = 'data/fieldCenter.inst'
     else:
         source = 'data/field%s.inst' % field
@@ -378,7 +378,7 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     fidr.close()
     fidw.close()
 
-    if obsID[5] == '0':
+    if teleState == 'design':
         source = 'data/designOptics.cmd'
     cmdFile = 'pert/wfs_%s.cmd' % (obsID)
     fidr = open(source, 'r')
@@ -403,41 +403,41 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
 
 def parseObsID(obsID, debugLevel):
     dz = int(obsID[0:2]) / 10
-    r0seeing500 = obsID[2:4]
-    if r0seeing500 == '04':
+    r0seeing500 = int(obsID[2])*0.2
+    if r0seeing500 == 0.4:
         r0 = 0.2002
-    elif r0seeing500 == '06':
+    elif r0seeing500 == 0.6:
         r0 = 0.1382
-    elif r0seeing500 == '08':
+    elif r0seeing500 == 0.8:
         r0 = 0.1058
-    elif r0seeing500 == '10':
+    elif r0seeing500 == 1.0:
         r0 = 0.0859
-    elif r0seeing500 == '12':
+    elif r0seeing500 == 1.2:
         r0 = 0.0724
-    elif r0seeing500 == '14':
+    elif r0seeing500 == 1.4:
         r0 = 0.0626
-    elif r0seeing500 == '00':
+    elif r0seeing500 == 0.0:
         r0 = 1e10
 
     #below, make seed independent of dz.
-    seed = int(obsID[4]) * 1000 + 7 + sum(int(i) for i in obsID[2:])
-    if obsID[5] == '0':
+    seed = int(obsID[3]) * 1000 + 7 + sum(int(i) for i in obsID[2:])
+    if obsID[4] == '0':
         teleState = 'design'
-    elif obsID[5] == '1':
+    elif obsID[4] == '1':
         teleState = 'perturbed'
     # bands = 'ugrizy'
     # band = bands[int(obsID[5])]
-    filter = int(obsID[6])
-    if int(obsID[7]) == 0:
+    filter = int(obsID[5])
+    if int(obsID[6]) == 0:
         field = 'center'
-    elif int(obsID[7]) == 1:
+    elif int(obsID[6]) == 1:
         field = 'UR'
-    elif int(obsID[7]) == 3:
+    elif int(obsID[6]) == 3:
         field = 'LL'
 
     exptimeList = [0.1, 1, 10, 15, 150, 1500]
-    exptime = exptimeList[int(obsID[8])]
-    ccdMode = int(obsID[9])
+    exptime = exptimeList[int(obsID[7])]
+    ccdMode = int(obsID[8])
     
     L0 = 30
     vKseeing500 = 0.976 * 500e-9 / (r0 / 3600 / 180 * np.pi) * \
