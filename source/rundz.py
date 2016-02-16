@@ -419,7 +419,7 @@ def parseObsID(obsID, debugLevel):
     elif r0seeing500 == 1.4:
         r0 = 0.0626
     elif r0seeing500 == 0.0:
-        r0 = 1e10
+        r0 = 0
 
     #below, make seed independent of dz.
     seed = int(obsID[3]) * 1000 + 7 + sum(int(i) for i in obsID[2:])
@@ -442,9 +442,13 @@ def parseObsID(obsID, debugLevel):
     ccdMode = int(obsID[8])
     
     L0 = 30
-    vKseeing500 = 0.976 * 500e-9 / (r0 / 3600 / 180 * np.pi) * \
-        np.sqrt(1 - 2.183 * (r0 / L0)**0.356)
-    r0seeing500 = 0.976 * 500e-9 / (r0 / 3600 / 180 * np.pi)
+    if r0 > 0:
+        vKseeing500 = 0.976 * 500e-9 / (r0 / 3600 / 180 * np.pi) * \
+            np.sqrt(1 - 2.183 * (r0 / L0)**0.356)
+        r0seeing500 = 0.976 * 500e-9 / (r0 / 3600 / 180 * np.pi)
+    else:
+        vKseeing500 = 0
+        r0seeing500 = 0
 
     if debugLevel >= 0:
         print('--------------------------')
