@@ -1,4 +1,7 @@
-function [] = dzPlots()
+function [] = dzPlots(fixed)
+
+% dzPlots('2106032')
+% dzPlots('2107132')
 
 znmax = 22;
 dz = [0.5 1.0 1.5 2.0 2.5];
@@ -8,7 +11,7 @@ znmax3 = znmax-3;
 zMean = zeros(ndz, znmax3);
 zDev = zeros(ndz, znmax3);
 for idz = 1:ndz
-    sumTXT = sprintf('output/wfs_%02d2106032_100_sum.txt', dz(idz)*10);
+    sumTXT = sprintf('output/wfs_%02d%s_100_sum.txt', dz(idz)*10, fixed);
     txtData = load(sumTXT);
     if idz == 1
         zTrue = txtData(1,:);
