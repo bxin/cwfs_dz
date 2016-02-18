@@ -91,8 +91,12 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
             '../../simulation/activeoptics/data/intrinsic_zn.txt')
     elif filter == 7:
         wavelength = 770  # in nm
-        intrinsic35 = np.loadtxt(
-            '../../simulation/activeoptics/data/intrinsic_zn_770nm.txt')
+        if teleState == 'design':
+            intrinsic35 = np.loadtxt(
+                '../../simulation/activeoptics/data/intrinsic_zn_770nm.txt')
+        elif teleState == 'M2xp05mm':
+            intrinsic35 = np.loadtxt(
+                'data/M2_r2_0.50_zn_770nm.txt')            
     else:
         wavelength = 500  # in nm
         intrinsic35 = np.loadtxt(
