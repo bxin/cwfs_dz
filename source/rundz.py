@@ -247,7 +247,7 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
         print('Check the log file below for progress')
         print('%s' % myargs)
 
-    # try:
+    try:
         runProgram('python %s/phosim.py' % phosimDir, argstring=myargs)
     except RuntimeError:
         print('Phosim RuntimeError')
