@@ -351,7 +351,10 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     instFile = 'pert/wfs_%s.inst' % obsID
     fidr = open(source, 'r')
     fidw = open(instFile, 'w')
-    for line in fidr:
+    if teleState == 'M2xp05mm':
+        fidw.write('move 6 500\n')
+    
+    for line in fidr:            
         if line.startswith('Opsim_obshistid'):
             line = 'Opsim_obshistid %s\n' % obsIDPhosim
         elif line.startswith('Opsim_filter'):
@@ -380,13 +383,15 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     fidr.close()
     fidw.close()
 
-    if teleState == 'design':
-        source = 'data/designOptics.cmd'
+    source = 'data/designOptics.cmd'
     cmdFile = 'pert/wfs_%s.cmd' % (obsID)
     fidr = open(source, 'r')
     fidw = open(cmdFile, 'w')
     for line in fidr:
-        fidw.write(line)
+        if teleState == 'M2xp05mm' and line.startswith('perturbationmode'):
+            fidw.write('perturbationmode 1\n')
+        else:
+            fidw.write(line)
     if ccdMode == 0:
         fidw.write('detectormode 0\n')
     elif ccdMode == 1:
@@ -406,19 +411,19 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
 def parseObsID(obsID, debugLevel):
     dz = int(obsID[0:2]) / 10
     r0seeing500 = int(obsID[2])*0.2
-    if r0seeing500 == 0.4:
+    if abs(r0seeing500 -  0.4)<1e-5:
         r0 = 0.2002
-    elif r0seeing500 == 0.6:
+    elif abs(r0seeing500 -  0.6)<1e-5:
         r0 = 0.1382
-    elif r0seeing500 == 0.8:
+    elif abs(r0seeing500 -  0.8)<1e-5:
         r0 = 0.1058
-    elif r0seeing500 == 1.0:
+    elif abs(r0seeing500 -  1.0)<1e-5:
         r0 = 0.0859
-    elif r0seeing500 == 1.2:
+    elif abs(r0seeing500 -  1.2)<1e-5:
         r0 = 0.0724
-    elif r0seeing500 == 1.4:
+    elif abs(r0seeing500 -  1.4)<1e-5:
         r0 = 0.0626
-    elif r0seeing500 == 0.0:
+    elif abs(r0seeing500 -  0.0)<1e-5:
         r0 = 0
 
     #below, make seed independent of dz.
@@ -426,7 +431,7 @@ def parseObsID(obsID, debugLevel):
     if obsID[4] == '0':
         teleState = 'design'
     elif obsID[4] == '1':
-        teleState = 'perturbed'
+        teleState = 'M2xp05mm'
     # bands = 'ugrizy'
     # band = bands[int(obsID[5])]
     filter = int(obsID[5])
