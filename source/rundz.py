@@ -14,6 +14,7 @@ import multiprocessing
 
 import numpy as np
 from astropy.io import fits
+from scipy import ndimage
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -55,7 +56,8 @@ def main():
         args.obsID, args.nsnap, args.mag, args.debugLevel)
 
     if args.stampSize == -1:
-        stampSize = 2**np.ceil(np.log(dz/1.2335/10e-3+80)/np.log(2))
+        # stampSize = 2**np.ceil(np.log(dz/1.2335/10e-3+50)/np.log(2))
+        stampSize = np.ceil((dz/1.2335/10e-3+100)/10)*10
     else:
         stampSize = args.stampSize
         
@@ -245,7 +247,7 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
         print('Check the log file below for progress')
         print('%s' % myargs)
 
-    try:
+    # try:
         runProgram('python %s/phosim.py' % phosimDir, argstring=myargs)
     except RuntimeError:
         print('Phosim RuntimeError')
@@ -316,8 +318,17 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
             amp = IHDU[0].data
             IHDU.close()
 
-            stamp = amp[eCenter[1] - stampSize / 2:eCenter[1] + stampSize / 2,
-                        eCenter[0] - stampSize / 2:eCenter[0] + stampSize / 2]
+            stamp0 = amp[eCenter[1] - 2* stampSize:eCenter[1] + 2* stampSize,
+                        eCenter[0] - 2*stampSize:eCenter[0] + 2*stampSize]
+            centroid = ndimage.measurements.center_of_mass(stamp0)
+            offsety = centroid[0] - 2 * stampSize + 1
+            offsetx = centroid[1] - 2 * stampSize + 1
+            stamp = amp[
+                eCenter[1] - stampSize / 2 + offsety:
+                eCenter[1] + stampSize / 2 + offsety,
+                eCenter[0] - stampSize / 2 + offsetx:
+                eCenter[0] + stampSize / 2 + offsetx]
+
             stampFile = 'image/wfe_%s_%03d_%d.fits' % (obsID, isnap, itra)
             if os.path.isfile(stampFile):
                 os.remove(stampFile)
