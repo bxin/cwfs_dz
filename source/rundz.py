@@ -100,6 +100,10 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
         elif teleState == 'M2rxp001deg':
             intrinsic35 = np.loadtxt(
                 'data/M2_r4_0.010_zn_770nm.txt')
+    elif filter == 2: #Chuck: r-band should be good enough
+        wavelength = 622 #use Leff
+        intrinsic35 = np.loadtxt(
+            '../../simulation/activeoptics/data/intrinsic_zn_r.txt')        
     else:
         wavelength = 500  # in nm
         intrinsic35 = np.loadtxt(

@@ -7,12 +7,16 @@ function [] = dzPlots(fixed)
 % dzPlots('5107132') %1.0 atm; UR;
 % dzPlots('7107132') %1.4 atm; UR;
 % dzPlots('3117132') %0.6 atm; UR; M2 x decenter 0.5mm
+% dzPlots('3127132') %0.6 atm; UR; M2 x-tilt 0.01 deg
+
+% dzPlots('3117142') %0.6 atm; UR; M2 x decenter 0.5mm; 150s exp;
+% dzPlots('3102132') %0.6 atm; UR; r-band
 
 
 znmax = 22;
 dz = [0.5 1.0 1.5 2.0 2.5];
-% dz = [0.5 1.0 1.5 2.0 ];
-dz = [0.5 1.0 2.0 ];
+dz = [0.5 1.0 1.5 2.0 ];
+% dz = [0.5 1.0 2.0 ];
 % dz = [1.0 2.0 ];
 
 ndz = length(dz);
