@@ -6,11 +6,14 @@ function [] = dzPlots(fixed)
 % dzPlots('3107132') %0.6 atm; UR;
 % dzPlots('5107132') %1.0 atm; UR;
 % dzPlots('7107132') %1.4 atm; UR;
+% dzPlots('3117132') %0.6 atm; UR; M2 x decenter 0.5mm
+
 
 znmax = 22;
 dz = [0.5 1.0 1.5 2.0 2.5];
 % dz = [0.5 1.0 1.5 2.0 ];
-% dz = [0.5 1.0 2.0 ];
+dz = [0.5 1.0 2.0 ];
+% dz = [1.0 2.0 ];
 
 ndz = length(dz);
 znmax3 = znmax-3;
@@ -28,7 +31,7 @@ end
 
 figure(1);clf;
 subplot(2,2,1);
-dd = zMean-repmat(zTrue,5,1);
+dd = zMean-repmat(zTrue,ndz,1);
 [~, idx] = sort(rms(dd),'descend');
 plot(dz,dd(:,idx)','.-','linewidth',2); 
 idx = idx+3;

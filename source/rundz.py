@@ -96,7 +96,10 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
                 '../../simulation/activeoptics/data/intrinsic_zn_770nm.txt')
         elif teleState == 'M2xp05mm':
             intrinsic35 = np.loadtxt(
-                'data/M2_r2_0.50_zn_770nm.txt')            
+                'data/M2_r2_0.50_zn_770nm.txt')
+        elif teleState == 'M2rxp001deg':
+            intrinsic35 = np.loadtxt(
+                'data/M2_r4_0.010_zn_770nm.txt')
     else:
         wavelength = 500  # in nm
         intrinsic35 = np.loadtxt(
@@ -349,8 +352,11 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
       ccdMode = \
         parseObsID(obsID, debugLevel)
     if mag == -1: #5mag = 100x; we use 14 mag for dz=1.0mm
-        mag = 14 #it takes too long if we increase intensity for 2.0mm, etc.
-        # mag = 14 - np.log((dz/1.0)**2)/np.log(100**0.2)
+        if exptime == 15:
+            mag = 14 #it takes too long if we increase intensity for 2.0mm, etc.
+            # mag = 14 - np.log((dz/1.0)**2)/np.log(100**0.2)
+        elif exptime == 150:
+            mag = 16
 
     if obsID[0] == '0':  #Phosim ignores the leading '0'
         obsIDPhosim = '9'+obsID[1:]
@@ -367,8 +373,9 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     fidr = open(source, 'r')
     fidw = open(instFile, 'w')
     if teleState == 'M2xp05mm':
-        fidw.write('move 6 500\n')
-    
+        fidw.write('move 6 500\n') #in micron
+    elif teleState == 'M2rxp001deg':
+        fidw.write('move 8 36\n')  #in arcsec
     for line in fidr:            
         if line.startswith('Opsim_obshistid'):
             line = 'Opsim_obshistid %s\n' % obsIDPhosim
@@ -403,7 +410,7 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     fidr = open(source, 'r')
     fidw = open(cmdFile, 'w')
     for line in fidr:
-        if teleState == 'M2xp05mm' and line.startswith('perturbationmode'):
+        if teleState != 'design' and line.startswith('perturbationmode'):
             fidw.write('perturbationmode 1\n')
         else:
             fidw.write(line)
@@ -447,6 +454,9 @@ def parseObsID(obsID, debugLevel):
         teleState = 'design'
     elif obsID[4] == '1':
         teleState = 'M2xp05mm'
+    elif obsID[4] == '2':
+        teleState = 'M2rxp001deg'
+       
     # bands = 'ugrizy'
     # band = bands[int(obsID[5])]
     filter = int(obsID[5])
