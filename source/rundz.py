@@ -102,8 +102,15 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
                 'data/M2_r4_0.010_zn_770nm.txt')
     elif filter == 2: #Chuck: r-band should be good enough
         wavelength = 622 #use Leff
-        intrinsic35 = np.loadtxt(
-            '../../simulation/activeoptics/data/intrinsic_zn_r.txt')        
+        if teleState == 'design':
+            intrinsic35 = np.loadtxt(
+                '../../simulation/activeoptics/data/intrinsic_zn_r.txt')        
+        elif teleState == 'M2xp05mm':
+            intrinsic35 = np.loadtxt(
+                'data/M2_r2_0.50_zn_r.txt')
+        elif teleState == 'M2rxp001deg':
+            intrinsic35 = np.loadtxt(
+                'data/M2_r4_0.010_zn_r.txt')
     else:
         wavelength = 500  # in nm
         intrinsic35 = np.loadtxt(
@@ -356,12 +363,14 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
       ccdMode = \
         parseObsID(obsID, debugLevel)
     if mag == -1: #5mag = 100x; we use 14 mag for dz=1.0mm
-        if exptime == 15:
+        if exptime == 15 or exptime == 10:
             mag = 14 #it takes too long if we increase intensity for 2.0mm, etc.
             # mag = 14 - np.log((dz/1.0)**2)/np.log(100**0.2)
         elif exptime == 150:
             mag = 16
-
+        elif exptime == 1:
+            mag = 12
+            
     if obsID[0] == '0':  #Phosim ignores the leading '0'
         obsIDPhosim = '9'+obsID[1:]
     else:
