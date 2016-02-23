@@ -336,11 +336,12 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
             amp = IHDU[0].data
             IHDU.close()
 
-            stamp0 = amp[eCenter[1] - 2* stampSize:eCenter[1] + 2* stampSize,
-                        eCenter[0] - 2*stampSize:eCenter[0] + 2*stampSize]
+            nPreCut = 1
+            stamp0 = amp[eCenter[1] - nPreCut* stampSize:eCenter[1] + nPreCut* stampSize,
+                        eCenter[0] - nPreCut*stampSize:eCenter[0] + nPreCut*stampSize]
             centroid = ndimage.measurements.center_of_mass(stamp0)
-            offsety = centroid[0] - 2 * stampSize + 1
-            offsetx = centroid[1] - 2 * stampSize + 1
+            offsety = centroid[0] - nPreCut * stampSize + 1
+            offsetx = centroid[1] - nPreCut * stampSize + 1
             stamp = amp[
                 eCenter[1] - stampSize / 2 + offsety:
                 eCenter[1] + stampSize / 2 + offsety,

@@ -9,9 +9,10 @@ function [] = dzPlots(fixed)
 % dzPlots('3117132') %0.6 atm; UR; M2 x decenter 0.5mm
 % dzPlots('3127132') %0.6 atm; UR; M2 x-tilt 0.01 deg
 % dzPlots('3117142') %0.6 atm; UR; M2 x decenter 0.5mm; 150s exp;
-
 % dzPlots('3102132') %0.6 atm; UR; r-band
 % dzPlots('3112132') %0.6 atm; UR; M2 x decenter 0.5mm; r-band
+% dzPlots('3117122') %0.6 atm; UR; M2 x decenter 0.5mm; 10s exp;
+% dzPlots('3117112') %0.6 atm; UR; M2 x decenter 0.5mm; 1s exp;
 
 
 znmax = 22;
