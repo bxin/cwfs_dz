@@ -12,6 +12,11 @@ function [] = dvPlots(ID)
 % dvPlots('??3117142') %0.6 atm; UR; M2 x decenter 0.5mm; 150s exp;
 % dvPlots('??3102132') %0.6 atm; UR; r-band
 % dvPlots('??3112132') %0.6 atm; UR; M2 x decenter 0.5mm; r-band
+% dvPlots('??0112132')
+% dvPlots('??2112132')
+% dvPlots('??5112132')
+% dvPlots('??7112132')
+
 % dvPlots('??3122132') %0.6 atm; UR; M2 x tilt 0.01 deg; r-band
 % dvPlots('??3117122') %0.6 atm; UR; M2 x decenter 0.5mm; 10s exp;
 % dvPlots('??3117112') %0.6 atm; UR; M2 x decenter 0.5mm; 1s exp;
@@ -62,6 +67,7 @@ end
 znmax3 = znmax-3;
 zMean = zeros(ndv, znmax3);
 zDev = zeros(ndv, znmax3);
+zDevT = zeros(ndv, znmax3);
 for idv = 1:ndv
     IDString = strrep(ID,repmat('?',1,length(dvString{idv})), dvString{idv});
     sumTXT = sprintf('output/wfs_%s_100_sum.txt', IDString);
@@ -71,10 +77,15 @@ for idv = 1:ndv
     end
     zMean(idv, :) = txtData(2,:);
     zDev(idv, :) = txtData(3,:);
+    if size(txtData,1)<4
+        zDevT(idv, :) = txtData(3,:);
+    else
+        zDevT(idv, :) = txtData(4,:);        
+    end
 end
 
 figure(1);clf;
-subplot(2,2,1);
+subplot(2,3,1);
 dd = zMean-repmat(zTrue,ndv,1);
 [~, idx] = sort(rms(dd),'descend');
 plot(dv,dd(:,idx)','.-','linewidth',2); 
@@ -86,7 +97,7 @@ ylabel('Measured - Truth (nm)');
 title('(Measured - Truth) for each Zernike');
 % y1=ylim;
 
-subplot(4,2,5);
+subplot(4,3,7);
 plot(dv, sqrt(sum((zMean-repmat(zTrue,ndv,1)).^2,2)),'-ro','linewidth',2);
 xlabel(xL);
 ylabel('Measured - Truth (nm)');
@@ -94,7 +105,7 @@ title('(Measured - Truth) RSSed');
 grid on;
 % ylim([0 y1(2)-y1(1)]);
 
-subplot(2,2,2);
+subplot(2,3,2);
 [~, idx] = sort(rms(zDev),'descend');
 plot(dv,zDev(:,idx)','.-','linewidth',2);
 idx = idx+3;
@@ -104,11 +115,32 @@ xlabel(xL);
 ylabel('STD (nm)');
 title('STD for each Zernike');
 
-subplot(4,2,6);
+subplot(4,3,8);
 if strcmp(ID(8),'?')
     loglog(dv, sqrt(sum(zDev.^2,2)),'-ro','linewidth',2);    
 else
     plot(dv, sqrt(sum(zDev.^2,2)),'-ro','linewidth',2);
+end
+xlabel(xL);
+ylabel('STD (nm)');
+title('STD RSSed');
+grid on;
+
+subplot(2,3,3);
+[~, idx] = sort(rms(zDevT),'descend');
+plot(dv,zDevT(:,idx)','.-','linewidth',2);
+idx = idx+3;
+legend(['Z' num2str(idx(1))],['Z' num2str(idx(2))],['Z' num2str(idx(3))],...
+    ['Z' num2str(idx(4))],'Location','southoutside');
+xlabel(xL);
+ylabel('STD (nm)');
+title('STD for each Zernike');
+
+subplot(4,3,9);
+if strcmp(ID(8),'?')
+    loglog(dv, sqrt(sum(zDevT.^2,2)),'-ro','linewidth',2);    
+else
+    plot(dv, sqrt(sum(zDevT.^2,2)),'-ro','linewidth',2);
 end
 xlabel(xL);
 ylabel('STD (nm)');

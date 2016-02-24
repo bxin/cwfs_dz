@@ -175,7 +175,9 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
 
     outFile = 'output/wfs_%s_%d_sum.txt' % (obsID, nsnap)
     np.savetxt(outFile, np.vstack((
-        ztrue, np.mean(zer, axis=1), np.std(zer, axis=1))))
+        ztrue, np.mean(zer, axis=1), np.std(zer, axis=1),
+        np.sqrt(np.sum((zer-np.tile(ztrue.reshape(-1,1),
+                                    (1,nsnap)))**2,axis=1)/nsnap) )))
 
 # def preproc():
 
