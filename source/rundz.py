@@ -388,8 +388,8 @@ def createPertFiles(obsID, nsnap, mag, debugLevel):
     instFile = 'pert/wfs_%s.inst' % obsID
     fidr = open(source, 'r')
     fidw = open(instFile, 'w')
-    if teleState == 'M2xp05mm':
-        fidw.write('move 6 500\n') #in micron
+    if teleState.startswith('M2xp'):
+        fidw.write('move 6 %d\n'% (int(teleState[4:6])*100)) #in micron
     elif teleState == 'M2rxp001deg':
         fidw.write('move 8 36\n')  #in arcsec
     for line in fidr:            
@@ -472,7 +472,15 @@ def parseObsID(obsID, debugLevel):
         teleState = 'M2xp05mm'
     elif obsID[4] == '2':
         teleState = 'M2rxp001deg'
-       
+    elif obsID[4] == '3':
+        teleState =  'M2xp02mm'
+    elif obsID[4] == '4':
+        teleState =  'M2xp04mm'
+    elif obsID[4] == '5':
+        teleState =  'M2xp06mm'
+    elif obsID[4] == '6':
+        teleState =  'M2xp08mm'
+               
     # bands = 'ugrizy'
     # band = bands[int(obsID[5])]
     filter = int(obsID[5])
