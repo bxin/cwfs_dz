@@ -57,7 +57,10 @@ def main():
 
     if args.stampSize == -1:
         # stampSize = 2**np.ceil(np.log(dz/1.2335/10e-3+50)/np.log(2))
-        stampSize = np.ceil((dz/1.2335/10e-3+100)/10)*10
+        if dz<3.0:
+            stampSize = np.ceil((dz/1.2335/10e-3+100)/10)*10
+        else:
+            stampSize = np.ceil((2.0/1.2335/10e-3+100)/10)*10
     else:
         stampSize = args.stampSize
         
@@ -65,7 +68,10 @@ def main():
         runPhosim(args.obsID, dz, instFile, cmdFile, args.nsnap, filter, field,
                   args.eimage, stampSize, args.numproc, args.debugLevel)
 
-    instruFile = 'lsst%02d' % (dz * 10)
+    if dz < 3.0:
+        instruFile = 'lsst%02d' % (dz * 10)
+    else:
+        instruFile = 'lsst20' 
     algoFile = 'exp'
     if not args.cwfsoff:
         parallelCwfs(args.obsID, args.eimage, instruFile, algoFile,
@@ -94,9 +100,9 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
         if teleState == 'design':
             intrinsic35 = np.loadtxt(
                 '../../simulation/activeoptics/data/intrinsic_zn_770nm.txt')
-        elif teleState == 'M2xp05mm':
+        elif teleState.startswith('M2xp'):
             intrinsic35 = np.loadtxt(
-                'data/M2_r2_0.50_zn_770nm.txt')
+                'data/M2_r2_%4.2f_zn_770nm.txt' % (int(teleState[4:6])/10))
         elif teleState == 'M2rxp001deg':
             intrinsic35 = np.loadtxt(
                 'data/M2_r4_0.010_zn_770nm.txt')
@@ -105,9 +111,9 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
         if teleState == 'design':
             intrinsic35 = np.loadtxt(
                 '../../simulation/activeoptics/data/intrinsic_zn_r.txt')        
-        elif teleState == 'M2xp05mm':
+        elif teleState.startswith('M2xp'):
             intrinsic35 = np.loadtxt(
-                'data/M2_r2_0.50_zn_r.txt')
+                'data/M2_r2_%4.2f_zn_r.txt' % (int(teleState[4:6])/10))
         elif teleState == 'M2rxp001deg':
             intrinsic35 = np.loadtxt(
                 'data/M2_r4_0.010_zn_r.txt')
@@ -129,7 +135,7 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
              marker='o', color='b', markersize=5)
     goodIdx = np.ones(nsnap)==1
     for isnap in range(nsnap):
-        zFile = 'output/wfs_%s_%03d.txt' % (obsID, isnap)
+        zFile = 'output/%s/wfs_%s_%03d.txt' % (obsID, obsID, isnap)
         zer[:, isnap] = np.loadtxt(zFile)
 
         if np.std(zer[:,isnap])>1000: #larger than 1um
@@ -152,9 +158,12 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     plt.legend(loc="best", shadow=True, fancybox=True)
     plt.grid()
 
-    plt.title('%3.1fmm, %4.2f arcsec, %s, field: %s, %6.1f s' % (
-        dz, vKseeing500, teleState, field, exptime))
-
+    if dz <3.0:
+        plt.title('%3.1fmm, %4.2f arcsec, %s, field: %s, %6.1f s' % (
+            dz, vKseeing500, teleState, field, exptime))
+    else:
+        plt.title('mid-%3.1fum, %4.2f arcsec, %s, field: %s, %6.1f s' % (
+            (dz-2.0)*10, vKseeing500, teleState, field, exptime))        
     ax = plt.subplot(2, 1, 2)
     plt.plot(x, ztrue, label='Truth (Optics only)',
              marker='o', color='b', markersize=5)
@@ -170,10 +179,10 @@ def plotMeanSTD(obsID, nsnap, debugLevel):
     plt.ylabel('Mean and STD (nm)')
     plt.grid()
 
-    plt.savefig('output/wfs_%s_%d.png' % (obsID, nsnap))
+    plt.savefig('output/%s/wfs_%s_%d.png' % (obsID, obsID, nsnap))
     # plt.show()
 
-    outFile = 'output/wfs_%s_%d_sum.txt' % (obsID, nsnap)
+    outFile = 'output/%s/wfs_%s_%d_sum.txt' % (obsID, obsID, nsnap)
     np.savetxt(outFile, np.vstack((
         ztrue, np.mean(zer, axis=1), np.std(zer, axis=1),
         np.sqrt(np.sum((zer-np.tile(ztrue.reshape(-1,1),
@@ -192,17 +201,18 @@ def parallelCwfs(obsID, eimage, instruFile, algoFile, stampSize, nsnap,
         I2Field = [0, 0]
         model = 'onAxis'
     elif field == 'UR':
-        I1Field = [1.168, 1.168]
-        I2Field = [1.184, 1.168]
+        I1Field = [1.166, 1.166]
+        I2Field = [1.186, 1.166]
         model = 'offAxis'
     elif field == 'LL':
-        I1Field = [-1.168, -1.168]
-        I2Field = [-1.184, -1.168]
+        I1Field = [-1.166, -1.166]
+        I2Field = [-1.186, -1.166]
         model = 'offAxis'
 
     jobs = []
     counter = 0
     for isnap in range(nsnap):
+        runcwfs(obsID, eimage, isnap, I1Field, I2Field, inst, algo, model)
         p = multiprocessing.Process(
             target=runcwfs, name='cwfs%d' % isnap, args=(
                 obsID, eimage, isnap, I1Field, I2Field, inst, algo, model))
@@ -218,18 +228,23 @@ def parallelCwfs(obsID, eimage, instruFile, algoFile, stampSize, nsnap,
 
 def runcwfs(obsID, eimage, isnap, I1Field, I2Field, inst, algo, model):
     if eimage == 0:
-        I1File = 'image/wfe_%s_%03d_1.fits' % (obsID, isnap)
-        I2File = 'image/wfe_%s_%03d_0.fits' % (obsID, isnap)
+        I1File = 'image/%s/wfe_%s_%03d_1.fits' % (obsID, obsID, isnap)
+        I2File = 'image/%s/wfe_%s_%03d_0.fits' % (obsID, obsID, isnap)
     else:
-        I1File = 'image/wfs_%s_%03d_1.fits' % (obsID, isnap)
-        I2File = 'image/wfs_%s_%03d_0.fits' % (obsID, isnap)
+        I1File = 'image/%s/wfs_%s_%03d_1.fits' % (obsID, obsID, isnap)
+        I2File = 'image/%s/wfs_%s_%03d_0.fits' % (obsID, obsID, isnap)
 
     I1 = cwfsImage(I1File, I1Field, 'intra')
     I2 = cwfsImage(I2File, I2Field, 'extra')
     algo.reset(I1, I2)
     algo.runIt(inst, I1, I2, model)
 
-    zFile = 'output/wfs_%s_%03d.txt' % (obsID, isnap)
+    outputDir = 'output/%s' % obsID
+    try:
+        os.stat(outputDir)
+    except:
+        os.makedirs(outputDir)    
+    zFile = '%s/wfs_%s_%03d.txt' % (outputDir, obsID, isnap)
     np.savetxt(zFile, algo.zer4UpNm)
     return
 
@@ -243,7 +258,13 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
         obsIDPhosim = obsID
        
     phosimDir = '../../simulation/phosimSE/'
-    phosimLog = 'image/log/wfs_%s.log' % (obsID)
+    logDir = 'image/%s'% obsID
+    try:
+        os.stat(logDir)
+    except:
+        os.makedirs(logDir)
+            
+    phosimLog = '%s/wfs_%s.log' % (logDir, obsID)
 
     isc = 'lsst%02d' % (dz * 10)
     iscDir = '%s/data/%s/' % (phosimDir, isc)
@@ -284,30 +305,18 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
         if field == 'center':
             chipStr = 'R22_S11_C%d' % itra  # 0 is extra, 1 is intra
             ampStr = 'R22_S11_C%d4' % itra
-            if itra == 0:
-                ampCenter = [366, 1862]
-                eCenter = [1855, 2180]
-            else:
-                ampCenter = [366, 1862]
-                eCenter = [147, 2180]
         elif field == 'UR':
             chipStr = 'R44_S00_C%d' % itra  # 0 is extra, 1 is intra
             ampStr = 'R44_S00_C%d4' % itra
-            if itra == 0:
-                ampCenter = [366, 1862]
-                eCenter = [1133, 1880]
-            else:
-                ampCenter = [366, 1862]
-                eCenter = [863, 1897]
         elif field == 'LL':
             chipStr = 'R00_S22_C%d' % itra  # 0 is extra, 1 is intra
             ampStr = 'R00_S22_C%d4' % itra
-            if itra == 0:
-                ampCenter = [366, 1862]
-                eCenter = [865, 2180]
-            else:
-                ampCenter = [366, 1862]
-                eCenter = [1147, 2177]
+        if itra == 0:
+            ampCenter = [366, 1862]
+            eCenter = [1820, 2180]
+        else:
+            ampCenter = [366, 1862]
+            eCenter = [180, 2180]
             
         for isnap in range(nsnap):
 
@@ -339,21 +348,25 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
             IHDU.close()
 
             nPreCut = 2
-            stamp0 = amp[eCenter[1] - nPreCut* stampSize:eCenter[1] + nPreCut* stampSize,
-                        eCenter[0] - nPreCut*stampSize:eCenter[0] + nPreCut*stampSize]
+            stamp0 = amp[max(0, eCenter[1] - nPreCut* stampSize):eCenter[1] + nPreCut* stampSize,
+                        max(0, eCenter[0] - nPreCut*stampSize):eCenter[0] + nPreCut*stampSize]
             centroid = ndimage.measurements.center_of_mass(stamp0)
             offsety = centroid[0] - nPreCut * stampSize + 1
             offsetx = centroid[1] - nPreCut * stampSize + 1
+            if (eCenter[1] - nPreCut*stampSize<0):
+                offsety -= eCenter[1] - nPreCut*stampSize
+            if (eCenter[0] - nPreCut*stampSize<0):
+                offsetx -= eCenter[0] - nPreCut*stampSize
             stamp = amp[
                 eCenter[1] - stampSize / 2 + offsety:
                 eCenter[1] + stampSize / 2 + offsety,
                 eCenter[0] - stampSize / 2 + offsetx:
                 eCenter[0] + stampSize / 2 + offsetx]
 
-            stampFile = 'image/wfe_%s_%03d_%d.fits' % (obsID, isnap, itra)
+            stampFile = 'image/%s/wfe_%s_%03d_%d.fits' % (obsID, obsID, isnap, itra)
             if os.path.isfile(stampFile):
                 os.remove(stampFile)
-            hdu = fits.PrimaryHDU(stamp)
+            hdu = fits.PrimaryHDU(np.rot90(stamp,2))
             hdu.writeto(stampFile)
 
     # for f in glob.glob('%s/output/*'%phosimDir):
@@ -506,7 +519,11 @@ def parseObsID(obsID, debugLevel):
 
     if debugLevel >= 0:
         print('--------------------------')
-        print('dz=%3.1fmm' % dz)
+        if dz<3.0:
+            print('dz=%3.1fmm' % dz)
+        else:
+            print('dz=2.0mm, midpoint = %dum' % ((dz-2.0)*10))
+            
         print('vKseeing500=%4.2f arcsec; r0seeing500=%6.4f arcsec' % (
             vKseeing500, r0seeing500))
         print('seed=%d' % seed)

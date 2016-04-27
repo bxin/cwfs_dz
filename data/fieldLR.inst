@@ -5,6 +5,6 @@ SIM_SEED 7001
 SIM_CAMCONFIG 7
 SIM_VISTIME 15.0
 SIM_NSNAP 100
-object  0     1.168    -1.168  17.000000 ../sky/sed_500.txt 0.0 0.0 0.0 0.0 0.0 0.0 star 0.0  none  none
-object  1     1.168    -1.184  17.000000 ../sky/sed_500.txt 0.0 0.0 0.0 0.0 0.0 0.0 star 0.0  none  none
+object  0     1.166    -1.166  17.000000 ../sky/sed_500.txt 0.0 0.0 0.0 0.0 0.0 0.0 star 0.0  none  none
+object  1     1.166    -1.186  17.000000 ../sky/sed_500.txt 0.0 0.0 0.0 0.0 0.0 0.0 star 0.0  none  none
 
