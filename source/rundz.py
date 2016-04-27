@@ -493,6 +493,8 @@ def parseObsID(obsID, debugLevel):
         teleState =  'M2xp06mm'
     elif obsID[4] == '6':
         teleState =  'M2xp08mm'
+    elif obsID[4] == '7':
+        teleState =  'M2xp10mm'
                
     # bands = 'ugrizy'
     # band = bands[int(obsID[5])]
