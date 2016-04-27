@@ -366,7 +366,11 @@ def runPhosim(obsID, dz, instFile, cmdFile, nsnap, filter, field, eimage,
             stampFile = 'image/%s/wfe_%s_%03d_%d.fits' % (obsID, obsID, isnap, itra)
             if os.path.isfile(stampFile):
                 os.remove(stampFile)
-            hdu = fits.PrimaryHDU(np.rot90(stamp,2))
+            stamp = np.rot90(stamp,2)
+            if (stamp.shape[1] < stamp.shape[0]):
+                stamp = np.hstack((stamp,np.zeros((
+                    stamp.shape[0],stamp.shape[0]-stamp.shape[1]))))
+            hdu = fits.PrimaryHDU(stamp)
             hdu.writeto(stampFile)
 
     # for f in glob.glob('%s/output/*'%phosimDir):
