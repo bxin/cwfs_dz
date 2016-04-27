@@ -212,7 +212,7 @@ def parallelCwfs(obsID, eimage, instruFile, algoFile, stampSize, nsnap,
     jobs = []
     counter = 0
     for isnap in range(nsnap):
-        runcwfs(obsID, eimage, isnap, I1Field, I2Field, inst, algo, model)
+        # runcwfs(obsID, eimage, isnap, I1Field, I2Field, inst, algo, model)
         p = multiprocessing.Process(
             target=runcwfs, name='cwfs%d' % isnap, args=(
                 obsID, eimage, isnap, I1Field, I2Field, inst, algo, model))
